@@ -68,12 +68,13 @@ class LASFile(object):
 
         self._text = ''
         self.index_unit = None
+        default_items = defaults.get_default_items()
         self.sections = {
-            'Version': defaults.DEFAULT_ITEMS['Version'],
-            'Well': defaults.DEFAULT_ITEMS['Well'],
-            'Curves': defaults.DEFAULT_ITEMS['Curves'],
-            'Parameter': defaults.DEFAULT_ITEMS['Parameter'],
-            'Other': str(defaults.DEFAULT_ITEMS['Other']),
+            'Version': default_items['Version'],
+            'Well': default_items['Well'],
+            'Curves': default_items['Curves'],
+            'Parameter': default_items['Parameter'],
+            'Other': str(default_items['Other']),
         }
 
         if not (file_ref is None):
@@ -137,15 +138,15 @@ class LASFile(object):
         data = read_parser.read_data(len(self.curves), null_subs=null_subs)
         self.set_data(data, truncate=False)
 
-        if (self.well['STRT'].unit.upper() == 'M' and
-                self.well['STOP'].unit.upper() == 'M' and
-                self.well['STEP'].unit.upper() == 'M' and
-                self.curves[0].unit.upper() == 'M'):
+        if (self.well['STRT'].unit.upper() in defaults.METRE_UNITS and
+                self.well['STOP'].unit.upper() in defaults.METRE_UNITS and
+                self.well['STEP'].unit.upper() in defaults.METRE_UNITS and
+                self.curves[0].unit.upper() in defaults.METRE_UNITS):
             self.index_unit = 'M'
-        elif (self.well['STRT'].unit.upper() in ('F', 'FT') and
-              self.well['STOP'].unit.upper() in ('F', 'FT') and
-              self.well['STEP'].unit.upper() in ('F', 'FT') and
-              self.curves[0].unit.upper() in ('F', 'FT')):
+        elif (self.well['STRT'].unit.upper() in defaults.FEET_UNITS and
+              self.well['STOP'].unit.upper() in defaults.FEET_UNITS and
+              self.well['STEP'].unit.upper() in defaults.FEET_UNITS and
+              self.curves[0].unit.upper() in defaults.FEET_UNITS):
             self.index_unit = 'FT'
 
     def write(self, file_object, version=None, wrap=None,
