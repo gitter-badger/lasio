@@ -94,12 +94,11 @@ class LASFile(object):
                 Python Unicode HOWTO for more information)
 
         '''
+        self._file_obj = reader.open_file(file_ref, **kwargs)
         self._file_ref = str(file_ref)
         sections = reader.read(file_ref, null_subs=null_subs, **kwargs)
 
-        
-
-        self._text = f.read()
+        self._text = self._file_obj.read()
         logger.debug('LASFile.read LAS content is type %s' % type(self._text))
 
         read_parser = reader.Reader(self._text, version=1.2)
@@ -131,6 +130,14 @@ class LASFile(object):
         except exceptions.LASHeaderError:
             logger.warning(traceback.format_exc().splitlines()[-1])
         self.sections['Other'] = read_parser.read_raw_text('~O')
+
+        # Deal with nonstandard sections that some operators and/or
+        # service companies (eg IHS) insist on adding.
+        for char in "BDEFGHIJKLMNQRSTUXYZ":
+            s, d = read_parser.read_raw_text(r'~[%s]' % char, return_section=True)
+            if s is not None and d is not None:
+                logger.warning('Found nonstandard LAS section: ' + s)
+                self.sections[s] = d
 
         # Set null value
         read_parser.null = self.well['NULL'].value
