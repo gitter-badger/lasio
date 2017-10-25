@@ -72,6 +72,7 @@ def open_file(file_ref, encoding=None, encoding_errors='replace',
         lines = file_ref.splitlines()
         if len(lines) == 1:  # File name
             if URL_REGEXP.match(file_ref):
+                logger.debug("Identified %s as a URL" % file_ref)
                 try:
                     import urllib2
                     file_ref = urllib2.urlopen(file_ref)
@@ -81,11 +82,14 @@ def open_file(file_ref, encoding=None, encoding_errors='replace',
                     enc = response.headers.get_content_charset('utf-8')
                     file_ref = StringIO(response.read().decode(enc))
             else:  # filename
+                logger.debug("Identified %s as a filename" % file_ref)
+                logger.debug("open() encoding=%s" % encoding)
                 data = get_unicode_from_filename(
                     file_ref, encoding, encoding_errors, autodetect_encoding,
                     autodetect_encoding_chars)
                 file_ref = StringIO(data)
         else:
+            logger.debug("Interpreting file_ref as raw LAS data")
             file_ref = StringIO('\n'.join(lines))
     return file_ref
 
@@ -337,21 +341,24 @@ def get_unicode_from_filename(fn, enc, errors, auto, nbytes):
         raw = test.read(nbytes_test)
     if raw.startswith(codecs.BOM_UTF8):
         enc = 'utf-8-sig'
+        logger.debug("detected as utf-8-sig based on BOM_UTF8")
         auto = False
 
     if auto:
+        logger.debug("Automatically detecting file encoding")
         with open(fn, mode='rb') as test:
             if nbytes is None:
+                logger.debug("  using the entire file")
                 raw = test.read()
             else:
+                logger.debug("  using first %d bytes" % nbytes)
                 raw = test.read(nbytes)
         enc = get_encoding(auto, raw)
 
-    # codecs.open is smarter than cchardet or chardet IME.
-
+    logger.debug("Opening file using codecs.open(...encoding=%s)" % enc)
     with codecs.open(fn, mode='r', encoding=enc, errors=errors) as f:
         data = f.read()
-
+    logger.debug("data type=%s" % type(data))
     return data
 
 
@@ -368,31 +375,31 @@ def get_encoding(auto, raw):
         A string specifying the character encoding.
 
     '''
+    detect_func = lambda r: None
+    method = "unknown"
     if auto is True:
         try:
-            import cchardet as chardet
+            import cchardet
+            detect_func = cchardet.detect
+            method = 'cchardet'
         except ImportError:
             try:
                 import chardet
+                detect_func = chardet.detect
+                method = 'chardet'
             except ImportError:
                 raise ImportError(
                     'chardet or cchardet is required for automatic'
                     ' detection of character encodings.')
-            else:
-                logger.debug('get_encoding Using chardet')
-                method = 'chardet'
-        else:
-            logger.debug('get_encoding Using cchardet')
-            method = 'cchardet'
     elif auto.lower() == 'chardet':
         import chardet
-        logger.debug('get_encoding Using chardet')
+        detect_func = chardet.detect
         method = 'chardet'
     elif auto.lower() == 'cchardet':
-        import cchardet as chardet
-        logger.debug('get_encoding Using cchardet')
+        import cchardet
+        detect_func = cchardet.detect
         method = 'cchardet'
 
-    result = chardet.detect(raw)
-    logger.debug('get_encoding %s results=%s' % (method, result))
+    result = detect_func(raw)
+    logger.debug('encoding identified as %s using %s' % (result, method))
     return result['encoding']
