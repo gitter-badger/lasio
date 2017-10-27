@@ -6,9 +6,7 @@ from os import path
 
 from lasio import __version__
 
-
-with open(path.join(path.dirname(__file__), "requirements.txt"), "r") as f:
-    requirements = f.read().splitlines()
+requirements = ['numpy', 'namedlist', 'ordereddict', 'xlwt']
 
 setup(name='lasio',
       version=__version__,
@@ -41,9 +39,11 @@ setup(name='lasio',
           "Programming Language :: Python :: 2.6",
           "Programming Language :: Python :: 2.7",
           "Programming Language :: Python :: 3",
+          "Programming Language :: Python :: 3.2",
           "Programming Language :: Python :: 3.3",
           "Programming Language :: Python :: 3.4",
           "Programming Language :: Python :: 3.5",
+          "Programming Language :: Python :: 3.6",
           "Topic :: Scientific/Engineering",
           "Topic :: System :: Filesystems",
           "Topic :: Scientific/Engineering :: Information Analysis",
